@@ -22,10 +22,10 @@ $script:Loading = $false
 $script:IsDirty = $false
 $script:ExtensionDirectoryPending = $false
 $script:StatusBase = ''
-$script:ExtensionBlockStart = '; BEGIN LiteWAMP managed extensions'
-$script:ExtensionBlockEnd = '; END LiteWAMP managed extensions'
-$script:OptionBlockStart = '; BEGIN LiteWAMP managed settings'
-$script:OptionBlockEnd = '; END LiteWAMP managed settings'
+$script:ExtensionBlockStart = '; BEGIN LitePHP managed extensions'
+$script:ExtensionBlockEnd = '; END LitePHP managed extensions'
+$script:OptionBlockStart = '; BEGIN LitePHP managed settings'
+$script:OptionBlockEnd = '; END LitePHP managed settings'
 $script:ZendExtensions = @('opcache', 'xdebug')
 $script:CommonExtensions = @('curl', 'fileinfo', 'gd', 'intl', 'mbstring', 'mysqli', 'openssl', 'pdo_mysql', 'pdo_sqlite', 'sodium', 'sqlite3', 'zip')
 $script:OptionDefinitions = @(
@@ -44,7 +44,7 @@ $script:OptionDefinitions = @(
 )
 
 function Show-Error([string]$Message) {
-    [void][System.Windows.Forms.MessageBox]::Show($Message, 'LiteWAMP - Configurazione PHP', 'OK', 'Error')
+    [void][System.Windows.Forms.MessageBox]::Show($Message, 'LitePHP - Configurazione PHP', 'OK', 'Error')
 }
 
 function Get-ExtensionId([string]$Value) {
@@ -136,7 +136,8 @@ function Get-Versions {
 }
 
 function Get-ConfiguredVersion {
-    $path = Join-Path $script:AppRoot 'LiteWAMP.ini'
+    $path = Join-Path $script:AppRoot 'LitePHP.ini'
+    if (-not (Test-Path -LiteralPath $path -PathType Leaf)) { $path = Join-Path $script:AppRoot 'LiteWAMP.ini' }
     if (-not (Test-Path -LiteralPath $path -PathType Leaf)) { return '' }
     foreach ($line in [System.IO.File]::ReadAllLines($path)) {
         if ($line -match '^php_version=(.*)$') { return $matches[1].Trim() }
@@ -280,7 +281,25 @@ function Get-OptionStates([object]$Version) {
     return $states
 }
 
+function Convert-ManagedMarkers([string]$Text) {
+    foreach ($kind in @('extensions', 'settings')) {
+        foreach ($edge in @('BEGIN', 'END')) {
+            $Text = $Text.Replace("; $edge LiteWAMP managed $kind", "; $edge LitePHP managed $kind")
+        }
+    }
+    return $Text
+}
+
+function Get-OriginalBackupPath([object]$Version) {
+    $current = $Version.IniPath + '.litephp.bak'
+    if (Test-Path -LiteralPath $current -PathType Leaf) { return $current }
+    $legacy = $Version.IniPath + '.litewamp.bak'
+    if (Test-Path -LiteralPath $legacy -PathType Leaf) { return $legacy }
+    return $current
+}
+
 function Update-ExtensionIniText([string]$Text, [string]$NewLine, [hashtable]$States) {
+    $Text = Convert-ManagedMarkers $Text
     $lines = New-Object 'System.Collections.Generic.List[string]'
     foreach ($line in [regex]::Split($Text, "`r`n|`n|`r")) { [void]$lines.Add($line) }
     foreach ($state in @($States.Values | Sort-Object Id)) {
@@ -317,6 +336,7 @@ function Update-ExtensionIniText([string]$Text, [string]$NewLine, [hashtable]$St
 }
 
 function Update-OptionIniText([string]$Text, [string]$NewLine, [hashtable]$States) {
+    $Text = Convert-ManagedMarkers $Text
     $lines = New-Object 'System.Collections.Generic.List[string]'
     foreach ($line in [regex]::Split($Text, "`r`n|`n|`r")) { [void]$lines.Add($line) }
     foreach ($state in @($States.Values | Where-Object { $_.Value -cne $_.OriginalValue } | Sort-Object Name)) {
@@ -452,10 +472,10 @@ function Save-Configuration([object]$Version, [hashtable]$ExtensionStates, [hash
     $updated = Update-ExtensionIniText $updated $doc.NewLine $ExtensionStates
     $updated = Update-OptionIniText $updated $doc.NewLine $OptionStates
     if ($updated -ceq $doc.Text) {
-        [void][System.Windows.Forms.MessageBox]::Show('Non ci sono modifiche da salvare.', 'LiteWAMP', 'OK', 'Information')
+        [void][System.Windows.Forms.MessageBox]::Show('Non ci sono modifiche da salvare.', 'LitePHP', 'OK', 'Information')
         return $true
     }
-    $temporary = Join-Path $Version.Home ('.litewamp-php-{0}.ini' -f [guid]::NewGuid().ToString('N'))
+    $temporary = Join-Path $Version.Home ('.litephp-php-{0}.ini' -f [guid]::NewGuid().ToString('N'))
     try {
         Write-TextDocument $temporary $updated $doc
         $validation = Test-Configuration $Version $temporary $ExtensionStates $OptionStates
@@ -463,8 +483,12 @@ function Save-Configuration([object]$Version, [hashtable]$ExtensionStates, [hash
             Show-Error "Le modifiche non sono state applicate perche' la verifica PHP non e' riuscita.`r`n`r`n$($validation.Message)"
             return $false
         }
-        $backup = $Version.IniPath + '.litewamp.bak'
-        if (-not (Test-Path -LiteralPath $backup -PathType Leaf)) { [IO.File]::Copy($Version.IniPath, $backup, $false) }
+        $backup = $Version.IniPath + '.litephp.bak'
+        if (-not (Test-Path -LiteralPath $backup -PathType Leaf)) {
+            $original = Get-OriginalBackupPath $Version
+            if (-not (Test-Path -LiteralPath $original -PathType Leaf)) { $original = $Version.IniPath }
+            [IO.File]::Copy($original, $backup, $false)
+        }
         try { [IO.File]::Replace($temporary, $Version.IniPath, $null) }
         catch { [IO.File]::Copy($temporary, $Version.IniPath, $true); [IO.File]::Delete($temporary) }
         return $true
@@ -473,9 +497,9 @@ function Save-Configuration([object]$Version, [hashtable]$ExtensionStates, [hash
 }
 
 function Restore-Configuration([object]$Version) {
-    $backup = $Version.IniPath + '.litewamp.bak'
+    $backup = Get-OriginalBackupPath $Version
     if (-not (Test-Path -LiteralPath $backup -PathType Leaf)) {
-        [void][System.Windows.Forms.MessageBox]::Show('Nessun backup disponibile per questa versione.', 'LiteWAMP', 'OK', 'Information'); return $false
+        [void][System.Windows.Forms.MessageBox]::Show('Nessun backup disponibile per questa versione.', 'LitePHP', 'OK', 'Information'); return $false
     }
     if ([System.Windows.Forms.MessageBox]::Show('Ripristinare il php.ini originale? Le impostazioni attuali verranno sostituite.', 'Ripristina backup', 'YesNo', 'Warning') -ne 'Yes') { return $false }
     try { [IO.File]::Copy($backup, $Version.IniPath, $true); return $true }
@@ -486,7 +510,9 @@ $versions = @(Get-Versions)
 if (-not $versions.Count) { Show-Error "Nessuna versione PHP valida trovata in:`r`n$PhpRoot"; exit 1 }
 
 $form = New-Object System.Windows.Forms.Form
-$form.Text = 'LiteWAMP - Configurazione PHP'; $form.StartPosition = 'CenterScreen'
+$form.Text = 'LitePHP - Configurazione PHP'; $form.StartPosition = 'CenterScreen'
+$iconPath = Join-Path $script:AppRoot 'assets\LitePHP.ico'
+if (Test-Path -LiteralPath $iconPath -PathType Leaf) { $form.Icon = New-Object Drawing.Icon($iconPath) }
 $form.Size = New-Object Drawing.Size(860, 660); $form.MinimumSize = New-Object Drawing.Size(720, 540)
 $form.AutoScaleMode = 'Dpi'; $form.Font = New-Object Drawing.Font('Segoe UI', 9)
 
@@ -586,7 +612,7 @@ function Sync-OptionStatesFromControls {
 function Update-Status {
     $suffix = if ($script:IsDirty) { ' - Modifiche non salvate' } else { '' }
     $status.Text = $script:StatusBase + $suffix
-    $form.Text = 'LiteWAMP - Configurazione PHP' + $(if ($script:IsDirty) { ' *' } else { '' })
+    $form.Text = 'LitePHP - Configurazione PHP' + $(if ($script:IsDirty) { ' *' } else { '' })
     $save.Enabled = $script:IsDirty -and $null -ne $script:Version
 }
 
@@ -642,7 +668,7 @@ function Load-Version([object]$Version) {
     $directoryStatus = if ($script:ExtensionDirectoryPending) { ' extension_dir verra'' impostata a "ext" al salvataggio.' } else { '' }
     $script:StatusBase = "$($script:ExtensionStates.Count) estensioni disponibili - $iniStatus.$directoryStatus Effetto al prossimo avvio di PHP."
     $common.Enabled = $script:ExtensionStates.Count -gt 0
-    $restore.Enabled = Test-Path -LiteralPath ($Version.IniPath + '.litewamp.bak') -PathType Leaf
+    $restore.Enabled = Test-Path -LiteralPath (Get-OriginalBackupPath $Version) -PathType Leaf
     Refresh-ExtensionList; Refresh-OptionControls; Update-DirtyState
 }
 
@@ -662,7 +688,7 @@ function Save-CurrentConfiguration([bool]$ShowSuccess) {
     try {
         if (-not (Save-Configuration $script:Version $script:ExtensionStates $script:OptionStates)) { return $false }
         if ($ShowSuccess) {
-            [void][Windows.Forms.MessageBox]::Show("Configurazione salvata e verificata. Sara' attiva al prossimo avvio di PHP.", 'LiteWAMP', 'OK', 'Information')
+            [void][Windows.Forms.MessageBox]::Show("Configurazione salvata e verificata. Sara' attiva al prossimo avvio di PHP.", 'LitePHP', 'OK', 'Information')
         }
         return $true
     } finally {
@@ -708,7 +734,7 @@ $save.Add_Click({
 $restore.Add_Click({
     if (Restore-Configuration $script:Version) {
         Load-Version $script:Version
-        [void][Windows.Forms.MessageBox]::Show('Backup iniziale ripristinato.', 'LiteWAMP', 'OK', 'Information')
+        [void][Windows.Forms.MessageBox]::Show('Backup iniziale ripristinato.', 'LitePHP', 'OK', 'Information')
     }
 })
 $close.Add_Click({ $form.Close() })

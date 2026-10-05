@@ -2,11 +2,11 @@
 setlocal EnableExtensions EnableDelayedExpansion
 chcp 65001 >nul
 
-title LiteWAMP Manager
+title LitePHP Manager
 color 0A
 
 rem ============================================================
-rem  LiteWAMP - PHP and MySQL portable development launcher
+rem  LitePHP - PHP and MySQL portable development launcher
 rem  All paths are resolved from the directory containing this BAT.
 rem ============================================================
 
@@ -15,8 +15,18 @@ if "%APP_ROOT:~-1%"=="\" set "APP_ROOT=%APP_ROOT:~0,-1%"
 
 set "PHP_ROOT=%APP_ROOT%\PHP"
 set "MYSQL_ROOT=%APP_ROOT%\MySQL"
-set "CONFIG_FILE=%APP_ROOT%\LiteWAMP.ini"
+set "CONFIG_FILE=%APP_ROOT%\LitePHP.ini"
 set "MYSQL_STARTED_BY_US=0"
+
+rem Preserve the saved environment when upgrading an existing LiteWAMP package.
+if not exist "%CONFIG_FILE%" if exist "%APP_ROOT%\LiteWAMP.ini" (
+    move /Y "%APP_ROOT%\LiteWAMP.ini" "%CONFIG_FILE%" >nul 2>&1
+    if not exist "%CONFIG_FILE%" (
+        echo  [ERRORE] Impossibile migrare LiteWAMP.ini a LitePHP.ini.
+        pause
+        exit /B 1
+    )
+)
 
 if not exist "%PHP_ROOT%" mkdir "%PHP_ROOT%" >nul 2>&1
 if not exist "%MYSQL_ROOT%" mkdir "%MYSQL_ROOT%" >nul 2>&1
@@ -55,11 +65,11 @@ if errorlevel 2 goto MANAGE_PHP
 if errorlevel 1 goto START_ENVIRONMENT
 
 :MANAGE_PHP
-if not exist "%APP_ROOT%\LiteWAMP.PhpConfig.ps1" (
+if not exist "%APP_ROOT%\LitePHP.PhpConfig.ps1" (
     color 0C
     echo.
     echo  [ERRORE] Gestore configurazione PHP non trovato:
-    echo  "%APP_ROOT%\LiteWAMP.PhpConfig.ps1"
+    echo  "%APP_ROOT%\LitePHP.PhpConfig.ps1"
     echo.
     pause
     color 0A
@@ -78,7 +88,7 @@ if not exist "%POWERSHELL_EXE%" (
     goto BOOT
 )
 
-"%POWERSHELL_EXE%" -NoProfile -ExecutionPolicy Bypass -STA -File "%APP_ROOT%\LiteWAMP.PhpConfig.ps1" -PhpRoot "%PHP_ROOT%"
+"%POWERSHELL_EXE%" -NoProfile -ExecutionPolicy Bypass -STA -File "%APP_ROOT%\LitePHP.PhpConfig.ps1" -PhpRoot "%PHP_ROOT%"
 if errorlevel 1 (
     color 0C
     echo.
@@ -91,7 +101,7 @@ goto BOOT
 
 :FIRST_CONFIGURATION
 echo  Nessuna configurazione salvata.
-echo  La procedura iniziale creera' automaticamente LiteWAMP.ini.
+echo  La procedura iniziale creera' automaticamente LitePHP.ini.
 echo.
 goto CONFIGURE
 
@@ -204,7 +214,7 @@ if errorlevel 1 (
 )
 
 echo.
-choice /C Q /N /M "[Q] Arresta LiteWAMP: "
+choice /C Q /N /M "[Q] Arresta LitePHP: "
 
 call :STOP_PHP
 if "%MYSQL_STARTED_BY_US%"=="1" if "%CFG_AUTO_SHUTDOWN%"=="1" call :STOP_MYSQL
@@ -324,7 +334,7 @@ call :HEADER
 echo  CARTELLA DEL PROGETTO
 echo  ----------------------------------------------------------
 echo  Inserisci la document root servita da PHP.
-echo  Premi INVIO per usare la cartella di LiteWAMP:
+echo  Premi INVIO per usare la cartella di LitePHP:
 echo  "%APP_ROOT%"
 echo.
 
@@ -477,11 +487,20 @@ exit /B 0
 set "MYSQL_HOME=%MYSQL_ROOT%\%CFG_MYSQL_VERSION%"
 set "MYSQL_EXE=%MYSQL_HOME%\bin\mysqld.exe"
 set "MYSQL_ADMIN=%MYSQL_HOME%\bin\mysqladmin.exe"
-set "MYSQL_INI=%MYSQL_HOME%\litewamp.ini"
+set "MYSQL_INI=%MYSQL_HOME%\litephp.ini"
 set "MYSQL_DATA=%MYSQL_HOME%\data"
 set "MYSQL_LOGS=%MYSQL_HOME%\logs"
 set "MYSQL_PID=%MYSQL_LOGS%\mysql.pid"
 set "MYSQL_LOG=%MYSQL_LOGS%\mysql-error.log"
+
+rem Keep custom client/server settings from an existing package.
+if not exist "%MYSQL_INI%" if exist "%MYSQL_HOME%\litewamp.ini" (
+    move /Y "%MYSQL_HOME%\litewamp.ini" "%MYSQL_INI%" >nul 2>&1
+    if not exist "%MYSQL_INI%" (
+        echo  [ERRORE] Impossibile migrare la configurazione MySQL a litephp.ini.
+        exit /B 1
+    )
+)
 
 call :IS_PORT_LISTENING "%CFG_MYSQL_PORT%"
 if not errorlevel 1 (
@@ -587,7 +606,7 @@ exit /B %ERRORLEVEL%
 
 :HEADER
 echo  ##########################################################
-echo  #                    LITEWAMP MANAGER                    #
+echo  #                    LITEPHP MANAGER                     #
 echo  ##########################################################
 echo.
 exit /B 0

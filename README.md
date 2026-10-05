@@ -1,12 +1,12 @@
-# LiteWAMP
+# LitePHP
 
-LiteWAMP is a lightweight, portable Windows launcher for running multiple PHP versions with an optional MySQL server.
+LitePHP is a lightweight, portable Windows launcher for running multiple PHP versions with an optional MySQL server.
 
 Project website: [litewamp.localphp.net](https://litewamp.localphp.net/)
 
-It uses PHP's built-in development server, requires no Apache installation, does not register Windows services, and resolves every runtime path relative to `LiteWAMP.bat`. The complete local environment can therefore be moved to another directory or drive without changing the launcher.
+It uses PHP's built-in development server, requires no Apache installation, does not register Windows services, and resolves every runtime path relative to `LitePHP.bat`. The complete local environment can therefore be moved to another directory or drive without changing the launcher.
 
-> LiteWAMP is intended for local development only. PHP's built-in server and the default MySQL configuration must not be exposed to untrusted networks or used as a production stack.
+> LitePHP is intended for local development only. PHP's built-in server and the default MySQL configuration must not be exposed to untrusted networks or used as a production stack.
 
 ## Features
 
@@ -17,10 +17,10 @@ It uses PHP's built-in development server, requires no Apache installation, does
 - Supports spaces in runtime and project paths.
 - Lets the user choose the PHP version, project document root, HTTP port, and optional MySQL version.
 - Uses port `80` by default, making the project available at `http://localhost/` without an explicit port.
-- Stores the selected environment in a generated `LiteWAMP.ini` file.
+- Stores the selected environment in a generated `LitePHP.ini` file.
 - Shows a configuration summary on later launches and lets the user reuse or replace it.
 - Initializes a separate MySQL data directory for each MySQL version.
-- Keeps PHP request logs visible in the LiteWAMP terminal.
+- Keeps PHP request logs visible in the LitePHP terminal.
 - Starts MySQL without opening an additional terminal window.
 - Stops PHP and performs a controlled MySQL shutdown when the user presses `Q`.
 - Detects occupied HTTP and MySQL ports before starting services.
@@ -54,19 +54,19 @@ For MySQL, download the standard Windows ZIP archive, not the larger debug binar
 
 ## Installation
 
-### 1. Clone or download LiteWAMP
+### 1. Clone or download LitePHP
 
 ```powershell
-git clone https://github.com/borindesign/LiteWAMP.git
-cd LiteWAMP
+git clone https://github.com/borindesign/LitePHP.git
+cd LitePHP
 ```
 
 The directory can be placed anywhere, for example:
 
 ```text
-C:\Tools\LiteWAMP
-D:\Development\LiteWAMP
-E:\Portable\LiteWAMP
+C:\Tools\LitePHP
+D:\Development\LitePHP
+E:\Portable\LitePHP
 ```
 
 No path is hard-coded in the launcher.
@@ -76,7 +76,7 @@ No path is hard-coded in the launcher.
 Extract each PHP ZIP archive into a separate direct child of `PHP\`:
 
 ```text
-LiteWAMP\
+LitePHP\
 └── PHP\
     ├── php-8.2.30\
     │   ├── php.exe
@@ -116,7 +116,7 @@ Do not copy absolute `extension_dir` values from another computer, and do not en
 Extract each MySQL Windows ZIP archive into a separate direct child of `MySQL\`:
 
 ```text
-LiteWAMP\
+LitePHP\
 └── MySQL\
     ├── mysql-8.0.46\
     │   └── bin\
@@ -128,7 +128,7 @@ LiteWAMP\
             └── mysqladmin.exe
 ```
 
-LiteWAMP creates these items when needed:
+LitePHP creates these items when needed:
 
 ```text
 mysql-version\
@@ -136,20 +136,42 @@ mysql-version\
 ├── logs\
 │   ├── mysql-error.log
 │   └── mysql.pid
-└── litewamp.ini
+└── litephp.ini
 ```
 
 Do not share one `data\` directory between different MySQL versions. Storage formats and upgrade rules can differ between releases.
 
 ## First run
 
-Double-click `LiteWAMP.bat` or run it from a terminal:
+### Custom launcher icon
+
+The original project icon is stored in `assets/LitePHP.svg`. `assets/LitePHP.ico` contains the Windows icon in multiple resolutions. A Batch file cannot embed its own icon; use the `LitePHP.lnk` shortcut to launch the manager with the custom icon.
+
+Create or refresh the shortcut in the package directory with Windows PowerShell:
 
 ```powershell
-.\LiteWAMP.bat
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\LitePHP.CreateShortcut.ps1
 ```
 
-When `LiteWAMP.ini` does not exist, the launcher asks for:
+Run this command again after moving or copying the package to another path. The shortcut contains local paths and is excluded from Git. The visual PHP configuration manager uses the same icon.
+
+### Upgrading from LiteWAMP
+
+The launcher migrates an existing `LiteWAMP.ini` to `LitePHP.ini` when the new file is absent, preserving the selected PHP version, project root, ports, and MySQL settings. MySQL's per-version `litewamp.ini` is migrated to `litephp.ini` in the same way. If both names exist, the LitePHP file takes precedence and the old file is retained.
+
+The PHP manager recognizes the original `.litewamp.bak` backup when a `.litephp.bak` backup is absent. On the next successful save it copies the original backup to the new name, preserving its contents. Old managed block markers are converted to LitePHP when saving, including after restoring a legacy backup.
+
+The existing local checkout may remain at `C:\SANDBOX\LiteWAMP`; branding does not require renaming its directory or changing the saved `project_dir`. The public website remains at `litewamp.localphp.net` until its domain is migrated separately. GitHub links use `https://github.com/borindesign/LitePHP`.
+
+### Starting the launcher
+
+Double-click `LitePHP.bat` or run it from a terminal:
+
+```powershell
+.\LitePHP.bat
+```
+
+When `LitePHP.ini` does not exist, the launcher asks for:
 
 1. PHP version.
 2. Project document root.
@@ -158,11 +180,11 @@ When `LiteWAMP.ini` does not exist, the launcher asks for:
 
 Press Enter at the HTTP port prompt to select port `80`.
 
-After the wizard is completed, the selected configuration is saved to `LiteWAMP.ini` next to the launcher.
+After the wizard is completed, the selected configuration is saved to `LitePHP.ini` next to the launcher.
 
 ## Reusing or replacing a configuration
 
-When `LiteWAMP.ini` already exists, LiteWAMP displays a complete summary and offers:
+When `LitePHP.ini` already exists, LitePHP displays a complete summary and offers:
 
 ```text
 [U] Use this configuration
@@ -173,7 +195,7 @@ When `LiteWAMP.ini` already exists, LiteWAMP displays a complete summary and off
 
 Choosing `N` removes the previous generated configuration and starts the setup wizard again.
 
-If a configured runtime or project directory no longer exists, the configuration is considered invalid and LiteWAMP starts a new setup automatically.
+If a configured runtime or project directory no longer exists, the configuration is considered invalid and LitePHP starts a new setup automatically.
 
 ## Managing PHP extensions and options
 
@@ -191,16 +213,16 @@ Changes are first written to a temporary configuration. Before validation, the m
 The first successful change creates one original backup beside the configuration:
 
 ```text
-PHP\php-version\php.ini.litewamp.bak
+PHP\php-version\php.ini.litephp.bak
 ```
 
 Use **Restore backup** to return to that original configuration. When `php.ini` is missing, the manager can create it from `php.ini-development`, falling back to `php.ini-production` when necessary.
 
-Existing directives are updated in place while comments, encoding, line endings, and unrelated settings are preserved. Missing extension directives are placed between `BEGIN LiteWAMP managed extensions` and `END LiteWAMP managed extensions`; missing main options use the separate `BEGIN LiteWAMP managed settings` and `END LiteWAMP managed settings` block. Changes take effect the next time that PHP version starts and do not alter an already running PHP process.
+Existing directives are updated in place while comments, encoding, line endings, and unrelated settings are preserved. Missing extension directives are placed between `BEGIN LitePHP managed extensions` and `END LitePHP managed extensions`; missing main options use the separate `BEGIN LitePHP managed settings` and `END LitePHP managed settings` block. Changes take effect the next time that PHP version starts and do not alter an already running PHP process.
 
 ## Generated configuration
 
-An example `LiteWAMP.ini` file looks like this:
+An example `LitePHP.ini` file looks like this:
 
 ```ini
 format_version=1
@@ -217,7 +239,7 @@ This file is machine-specific and is intentionally excluded from Git.
 
 ## Starting the environment
 
-When the selected configuration starts, LiteWAMP:
+When the selected configuration starts, LitePHP:
 
 1. Verifies that the HTTP port is available.
 2. Initializes the selected MySQL data directory when necessary.
@@ -228,18 +250,18 @@ When the selected configuration starts, LiteWAMP:
 
 When port `80` is selected, open `http://localhost/`. For another port, such as `8080`, open `http://localhost:8080/`.
 
-## Stopping LiteWAMP safely
+## Stopping LitePHP safely
 
 While the environment is running, the terminal displays:
 
 ```text
-[Q] Stop LiteWAMP
+[Q] Stop LitePHP
 ```
 
 Press `Q` to perform the controlled shutdown sequence:
 
 1. Terminate the PHP development server.
-2. Send `mysqladmin shutdown` to the MySQL instance started by LiteWAMP.
+2. Send `mysqladmin shutdown` to the MySQL instance started by LitePHP.
 3. Confirm that both services have stopped.
 4. Return to the main menu.
 
@@ -247,7 +269,7 @@ Do not close the terminal with the window close button while the environment is 
 
 ## MySQL initialization and credentials
 
-When a selected MySQL version has no initialized `data\mysql` directory, LiteWAMP runs MySQL with `--initialize-insecure`.
+When a selected MySQL version has no initialized `data\mysql` directory, LitePHP runs MySQL with `--initialize-insecure`.
 
 This creates a local `root` account without an initial password. The generated server configuration binds MySQL to the local computer only.
 
@@ -259,7 +281,7 @@ If the root password is changed, automatic shutdown through the generated client
 
 ### PHP
 
-PHP request logs remain visible in the main LiteWAMP terminal while the server runs.
+PHP request logs remain visible in the main LitePHP terminal while the server runs.
 
 ```text
 127.0.0.1:53120 Accepted
@@ -281,37 +303,40 @@ Use this file when MySQL does not initialize, start, or stop correctly.
 
 To add a version:
 
-1. Stop LiteWAMP by pressing `Q`.
+1. Stop LitePHP by pressing `Q`.
 2. Extract the runtime into a new direct child of `PHP\` or `MySQL\`.
-3. Start LiteWAMP again.
+3. Start LitePHP again.
 4. Choose `N` when asked whether to reuse the saved configuration.
 
 To remove a version:
 
-1. Stop LiteWAMP.
+1. Stop LitePHP.
 2. Back up any required MySQL databases.
 3. Remove the version directory.
-4. Start LiteWAMP and create a new configuration.
+4. Start LitePHP and create a new configuration.
 
 ## Moving the environment
 
-The LiteWAMP directory can be copied or moved because runtime paths are resolved from the location of `LiteWAMP.bat`.
+The LitePHP directory can be copied or moved because runtime paths are resolved from the location of `LitePHP.bat`.
 
 Before copying an environment that contains MySQL data:
 
 1. Press `Q` and wait for the `MySQL stopped` confirmation.
 2. Verify that no `mysqld.exe` process is running.
-3. Copy the complete LiteWAMP directory.
+3. Copy the complete LitePHP directory.
 
 For migration between MySQL versions, prefer a logical export and import using `mysqldump` rather than copying one version's physical data directory into another version.
 
 ## Project structure
 
 ```text
-LiteWAMP\
-├── LiteWAMP.bat           # Main interactive launcher
-├── LiteWAMP.PhpConfig.ps1 # Visual PHP configuration manager
-├── LiteWAMP.ini           # Generated locally; excluded from Git
+LitePHP\
+├── LitePHP.bat           # Main interactive launcher
+├── LitePHP.PhpConfig.ps1 # Visual PHP configuration manager
+├── LitePHP.CreateShortcut.ps1 # Creates or refreshes the custom icon shortcut
+├── LitePHP.lnk           # Generated locally; excluded from Git
+├── LitePHP.ini           # Generated locally; excluded from Git
+├── assets\               # Original SVG and multi-resolution Windows ICO
 ├── PHP\               # Locally installed PHP ZIP distributions
 └── MySQL\             # Locally installed MySQL ZIP distributions
 ```
@@ -320,7 +345,7 @@ LiteWAMP\
 
 ### The PHP version menu shows startup warnings
 
-LiteWAMP detects versions with `php.exe -n -v`, which does not load `php.ini`. Warnings shown when the server starts usually indicate invalid entries in the selected `php.ini`.
+LitePHP detects versions with `php.exe -n -v`, which does not load `php.ini`. Warnings shown when the server starts usually indicate invalid entries in the selected `php.ini`.
 
 Check that:
 
@@ -331,7 +356,7 @@ Check that:
 
 ### Port 80 is already occupied
 
-IIS, another web server, a development tool, or another LiteWAMP instance may already be listening on port `80`. Stop the conflicting service or create a new configuration using another port such as `8080`.
+IIS, another web server, a development tool, or another LitePHP instance may already be listening on port `80`. Stop the conflicting service or create a new configuration using another port such as `8080`.
 
 ### MySQL does not start
 
@@ -339,22 +364,23 @@ Check `MySQL\mysql-version\logs\mysql-error.log`. Also verify that port `3306` i
 
 ### A previous MySQL instance is still running
 
-Do not start another server against the same data directory. Stop the existing process cleanly with its matching `mysqladmin.exe`, then restart LiteWAMP.
+Do not start another server against the same data directory. Stop the existing process cleanly with its matching `mysqladmin.exe`, then restart LitePHP.
 
 ### The Batch file reports a missing label
 
-`LiteWAMP.bat` must use Windows CRLF line endings. The included `.gitattributes` file enforces CRLF when the repository is checked out through Git.
+`LitePHP.bat` must use Windows CRLF line endings. The included `.gitattributes` file enforces CRLF when the repository is checked out through Git.
 
 ### Paths containing special characters
 
-Spaces are supported. Avoid exclamation marks (`!`) in the LiteWAMP path or project document root because the launcher uses delayed environment-variable expansion.
+Spaces are supported. Avoid exclamation marks (`!`) in the LitePHP path or project document root because the launcher uses delayed environment-variable expansion.
 
 ## Repository hygiene
 
 The following local items are excluded from source control:
 
 - PHP and MySQL vendor distributions;
-- `LiteWAMP.ini`;
+- `LitePHP.ini`;
+- legacy `LiteWAMP.ini` and the generated `LitePHP.lnk` shortcut;
 - MySQL data directories;
 - generated certificates and private keys;
 - PID and log files;
@@ -364,6 +390,6 @@ Before publishing changes, verify that `git status` contains only launcher sourc
 
 ## Production use
 
-LiteWAMP is not a production web server, process supervisor, security boundary, or database deployment system.
+LitePHP is not a production web server, process supervisor, security boundary, or database deployment system.
 
 For production, use a supported web server and PHP process manager, protect database credentials, enable authentication, apply operating-system security updates, and follow the deployment guidance of the selected PHP and MySQL releases.
