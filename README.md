@@ -2,7 +2,7 @@
 
 LitePHP is a lightweight, portable Windows launcher for running multiple PHP versions with an optional MySQL server.
 
-Project website: [litephp.localphp.net](https://litephp.localphp.net/)
+Project website: [localphp.net/litephp](https://localphp.net/litephp/)
 
 It uses PHP's built-in development server, requires no Apache installation, does not register Windows services, and resolves every runtime path relative to `LitePHP.bat`. The complete local environment can therefore be moved to another directory or drive without changing the launcher.
 
