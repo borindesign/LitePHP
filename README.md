@@ -2,7 +2,7 @@
 
 LitePHP is a lightweight, portable Windows launcher for running multiple PHP versions with an optional MySQL server.
 
-Project website: [litewamp.localphp.net](https://litewamp.localphp.net/)
+Project website: [litephp.localphp.net](https://litephp.localphp.net/)
 
 It uses PHP's built-in development server, requires no Apache installation, does not register Windows services, and resolves every runtime path relative to `LitePHP.bat`. The complete local environment can therefore be moved to another directory or drive without changing the launcher.
 
@@ -161,7 +161,7 @@ The launcher migrates an existing `LiteWAMP.ini` to `LitePHP.ini` when the new f
 
 The PHP manager recognizes the original `.litewamp.bak` backup when a `.litephp.bak` backup is absent. On the next successful save it copies the original backup to the new name, preserving its contents. Old managed block markers are converted to LitePHP when saving, including after restoring a legacy backup.
 
-The existing local checkout may remain at `C:\SANDBOX\LiteWAMP`; branding does not require renaming its directory or changing the saved `project_dir`. The public website remains at `litewamp.localphp.net` until its domain is migrated separately. GitHub links use `https://github.com/borindesign/LitePHP`.
+The local checkout is at `C:\SANDBOX\LitePHP`. After moving or renaming the package directory, update `project_dir` in `LitePHP.ini` if the document root moved with it, and refresh `LitePHP.lnk` using the command above. The public website remains at `litewamp.localphp.net` until its domain is migrated separately. GitHub links use `https://github.com/borindesign/LitePHP`.
 
 ### Starting the launcher
 
